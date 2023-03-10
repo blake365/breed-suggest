@@ -1,193 +1,454 @@
-import type { NextPage } from "next";
-import Head from "next/head";
-import Image from "next/image";
-import { useRef, useState } from "react";
-import { Toaster, toast } from "react-hot-toast";
-import DropDown, { VibeType } from "../components/DropDown";
-import Footer from "../components/Footer";
-import Github from "../components/GitHub";
-import Header from "../components/Header";
-import LoadingDots from "../components/LoadingDots";
+import type { NextPage } from 'next'
+import Link from 'next/link'
+import Head from 'next/head'
+import { useRef, useState } from 'react'
+import { red, orange, brown, grey, yellow } from '@mui/material/colors'
+import Footer from '../components/Footer'
+import Header from '../components/Header'
+import LoadingDots from '../components/LoadingDots'
+import {
+	Slider,
+	Radio,
+	FormControl,
+	RadioGroup,
+	FormControlLabel,
+	ToggleButton,
+	ToggleButtonGroup,
+	Checkbox,
+} from '@mui/material'
+
+const sizeLevels = [
+	{
+		value: 1,
+		label: 'Toy',
+	},
+	{
+		value: 33,
+		label: 'Small',
+	},
+	{
+		value: 66,
+		label: 'Medium',
+	},
+	{
+		value: 100,
+		label: 'Large',
+	},
+]
+const energyLevels = [
+	{
+		value: 1,
+		label: 'Low',
+	},
+	{
+		value: 50,
+		label: 'Medium',
+	},
+	{
+		value: 100,
+		label: 'High',
+	},
+]
+const intelligenceLevels = [
+	{
+		value: 1,
+		label: 'Low',
+	},
+	{
+		value: 50,
+		label: 'Medium',
+	},
+	{
+		value: 100,
+		label: 'High',
+	},
+]
 
 const Home: NextPage = () => {
-  const [loading, setLoading] = useState(false);
-  const [bio, setBio] = useState("");
-  const [vibe, setVibe] = useState<VibeType>("Professional");
-  const [generatedBios, setGeneratedBios] = useState<String>("");
+	const [loading, setLoading] = useState(false)
+	const [generatedResults, setGeneratedResults] = useState<String>('')
+	const [energy, setEnergy] = useState(50)
+	const [intelligence, setIntelligence] = useState(50)
+	const [size, setSize] = useState(33)
+	const [color, setColor] = useState('none')
+	const [personality, setPersonality] = useState('Independent')
+	const [shed, setShed] = useState(false)
+	const [hypo, setHypo] = useState(false)
 
-  const bioRef = useRef<null | HTMLDivElement>(null);
+	const handlePersonalityChange = (
+		event: React.MouseEvent<HTMLElement>,
+		newPersonality: string
+	) => {
+		setPersonality(newPersonality)
+	}
 
-  const scrollToBios = () => {
-    if (bioRef.current !== null) {
-      bioRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  };
+	const handleShedChange = () => {
+		setShed((prevState) => !prevState)
+	}
 
-  const prompt = `Generate 2 ${vibe} twitter biographies with no hashtags and clearly labeled "1." and "2.". ${
-    vibe === "Funny"
-      ? "Make sure there is a joke in there and it's a little ridiculous."
-      : null
-  }
-      Make sure each generated biography is less than 160 characters, has short sentences that are found in Twitter bios, and base them on this context: ${bio}${
-    bio.slice(-1) === "." ? "" : "."
-  }`;
+	const handleHypoChange = () => {
+		// console.log('hypo')
+		setHypo(!hypo)
+	}
 
-  const generateBio = async (e: any) => {
-    e.preventDefault();
-    setGeneratedBios("");
-    setLoading(true);
-    const response = await fetch("/api/generate", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        prompt,
-      }),
-    });
+	const handleColorChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setColor((event.target as HTMLInputElement).value)
+	}
 
-    if (!response.ok) {
-      throw new Error(response.statusText);
-    }
+	const bioRef = useRef<null | HTMLDivElement>(null)
 
-    // This data is a ReadableStream
-    const data = response.body;
-    if (!data) {
-      return;
-    }
+	const scrollToBios = () => {
+		if (bioRef.current !== null) {
+			bioRef.current.scrollIntoView({ behavior: 'smooth' })
+		}
+	}
 
-    const reader = data.getReader();
-    const decoder = new TextDecoder();
-    let done = false;
+	const parseState = (
+		energy: number,
+		intelligence: number,
+		size: number,
+		personality: string,
+		shed: boolean,
+		hypo: boolean,
+		color: string
+	) => {
+		let string = ''
+		if (energy === 1) {
+			string += 'low energy level, '
+		} else if (energy === 50) {
+			string += 'moderate energy level, '
+		} else if (energy === 100) {
+			string += 'high energy level, '
+		}
 
-    while (!done) {
-      const { value, done: doneReading } = await reader.read();
-      done = doneReading;
-      const chunkValue = decoder.decode(value);
-      setGeneratedBios((prev) => prev + chunkValue);
-    }
-    scrollToBios();
-    setLoading(false);
-  };
+		if (intelligence === 1) {
+			string += 'low intelligence level, '
+		} else if (intelligence === 50) {
+			string += 'moderate intelligence level, '
+		} else if (intelligence === 100) {
+			string += 'high intelligence level, '
+		}
+		if (size === 1) {
+			string += 'toy sized, '
+		} else if (size === 33) {
+			string += 'small size, '
+		} else if (size === 66) {
+			string += 'medium size, '
+		} else if (size === 100) {
+			string += 'large size, '
+		}
 
-  return (
-    <div className="flex max-w-5xl mx-auto flex-col items-center justify-center py-2 min-h-screen">
-      <Head>
-        <title>Twitter Bio Generator</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+		if (personality) {
+			string += `an ${personality} personality, `
+		}
 
-      <Header />
-      <main className="flex flex-1 w-full flex-col items-center justify-center text-center px-4 mt-12 sm:mt-20">
-        <a
-          className="flex max-w-fit items-center justify-center space-x-2 rounded-full border border-gray-300 bg-white px-4 py-2 text-sm text-gray-600 shadow-md transition-colors hover:bg-gray-100 mb-5"
-          href="https://github.com/Nutlope/twitterbio"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Github />
-          <p>Star on GitHub</p>
-        </a>
-        <h1 className="sm:text-6xl text-4xl max-w-[708px] font-bold text-slate-900">
-          Generate your next Twitter bio using chatGPT
-        </h1>
-        <p className="text-slate-500 mt-5">47,118 bios generated so far.</p>
-        <div className="max-w-xl w-full">
-          <div className="flex mt-10 items-center space-x-3">
-            <Image
-              src="/1-black.png"
-              width={30}
-              height={30}
-              alt="1 icon"
-              className="mb-5 sm:mb-0"
-            />
-            <p className="text-left font-medium">
-              Copy your current bio{" "}
-              <span className="text-slate-500">
-                (or write a few sentences about yourself)
-              </span>
-              .
-            </p>
-          </div>
-          <textarea
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            rows={4}
-            className="w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black my-5"
-            placeholder={
-              "e.g. Senior Developer Advocate @vercel. Tweeting about web development, AI, and React / Next.js. Writing nutlope.substack.com."
-            }
-          />
-          <div className="flex mb-5 items-center space-x-3">
-            <Image src="/2-black.png" width={30} height={30} alt="1 icon" />
-            <p className="text-left font-medium">Select your vibe.</p>
-          </div>
-          <div className="block">
-            <DropDown vibe={vibe} setVibe={(newVibe) => setVibe(newVibe)} />
-          </div>
+		if (shed) {
+			string += 'does not shed, '
+		}
 
-          {!loading && (
-            <button
-              className="bg-black rounded-xl text-white font-medium px-4 py-2 sm:mt-10 mt-8 hover:bg-black/80 w-full"
-              onClick={(e) => generateBio(e)}
-            >
-              Generate your bio &rarr;
-            </button>
-          )}
-          {loading && (
-            <button
-              className="bg-black rounded-xl text-white font-medium px-4 py-2 sm:mt-10 mt-8 hover:bg-black/80 w-full"
-              disabled
-            >
-              <LoadingDots color="white" style="large" />
-            </button>
-          )}
-        </div>
-        <Toaster
-          position="top-center"
-          reverseOrder={false}
-          toastOptions={{ duration: 2000 }}
-        />
-        <hr className="h-px bg-gray-700 border-1 dark:bg-gray-700" />
-        <div className="space-y-10 my-10">
-          {generatedBios && (
-            <>
-              <div>
-                <h2
-                  className="sm:text-4xl text-3xl font-bold text-slate-900 mx-auto"
-                  ref={bioRef}
-                >
-                  Your generated bios
-                </h2>
-              </div>
-              <div className="space-y-8 flex flex-col items-center justify-center max-w-xl mx-auto">
-                {generatedBios
-                  .substring(generatedBios.indexOf("1") + 3)
-                  .split("2.")
-                  .map((generatedBio) => {
-                    return (
-                      <div
-                        className="bg-white rounded-xl shadow-md p-4 hover:bg-gray-100 transition cursor-copy border"
-                        onClick={() => {
-                          navigator.clipboard.writeText(generatedBio);
-                          toast("Bio copied to clipboard", {
-                            icon: "✂️",
-                          });
-                        }}
-                        key={generatedBio}
-                      >
-                        <p>{generatedBio}</p>
-                      </div>
-                    );
-                  })}
-              </div>
-            </>
-          )}
-        </div>
-      </main>
-      <Footer />
-    </div>
-  );
-};
+		if (hypo) {
+			string += 'is hypoallergenic, '
+		}
 
-export default Home;
+		if (color !== 'none') {
+			string += `and has a primary fur color of ${color}`
+		}
+
+		// string +=
+		// 	'. If there is not a good match for a dog breed with the listed qualities, suggest that the user adopt a dog from the local rescue or humane society.'
+
+		console.log(string)
+		return string
+	}
+
+	// console.log(
+	// 	parseState(energy, intelligence, size, personality, shed, hypo, color)
+	// )
+	const generateBio = async (e: any) => {
+		let prompt = `Suggest 3 dog breeds clearly labeled "1." and "2." and "3.". Format the response with like this: 1. {Breed Name}: {description}. Replace the text in brackets with the generated response. Write a concise description of the breed to sell the benefits. The dog breed should have the following qualities: `
+		e.preventDefault()
+		setGeneratedResults('')
+		setLoading(true)
+
+		let traits = parseState(
+			energy,
+			intelligence,
+			size,
+			personality,
+			shed,
+			hypo,
+			color
+		)
+
+		prompt = prompt + traits
+		const response = await fetch('/api/generate', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				prompt,
+			}),
+		})
+
+		if (!response.ok) {
+			throw new Error(response.statusText)
+		}
+
+		// This data is a ReadableStream
+		const data = response.body
+		if (!data) {
+			return
+		}
+
+		const reader = data.getReader()
+		const decoder = new TextDecoder()
+		let done = false
+
+		while (!done) {
+			const { value, done: doneReading } = await reader.read()
+			done = doneReading
+			const chunkValue = decoder.decode(value)
+			setGeneratedResults((prev) => prev + chunkValue)
+		}
+		scrollToBios()
+		setLoading(false)
+	}
+
+	return (
+		<div className='flex flex-col items-center justify-center max-w-5xl min-h-screen py-2 mx-auto'>
+			<Head>
+				<title>Dog Breed Suggester</title>
+				<link rel='icon' href='/favicon.ico' />
+			</Head>
+
+			<Header />
+			<main className='flex flex-col items-center justify-center flex-1 w-full px-4 mt-12 text-center sm:mt-20'>
+				<h1 className='sm:text-6xl text-3xl max-w-[708px] font-bold text-slate-900'>
+					Dog breed suggestions based on the traits you desire.
+				</h1>
+				<div className='w-48 pt-4'>
+					<span className='text-xl font-bold'>Size</span>
+					<Slider
+						onChange={(_, value) => setSize(value as number)}
+						aria-label='Restricted values'
+						defaultValue={33}
+						step={null}
+						marks={sizeLevels}
+						color='primary'
+					/>
+					<span className='text-xl font-bold'>Energy Level</span>
+					<Slider
+						onChange={(_, value) => setEnergy(value as number)}
+						aria-label='Restricted values'
+						defaultValue={50}
+						step={null}
+						marks={energyLevels}
+						color='primary'
+					/>
+					<span className='text-xl font-bold'>Intelligence Level</span>
+					<Slider
+						onChange={(_, value) => setIntelligence(value as number)}
+						aria-label='Restricted values'
+						defaultValue={50}
+						step={null}
+						marks={intelligenceLevels}
+						color='primary'
+					/>
+				</div>
+				<div className='flex flex-col pt-4'>
+					<span className='text-xl font-bold'>Personality</span>
+					<ToggleButtonGroup
+						value={personality}
+						exclusive
+						onChange={handlePersonalityChange}
+						aria-label='text alignment'
+					>
+						<ToggleButton value='Independent' aria-label='Independent'>
+							Independent
+						</ToggleButton>
+						<ToggleButton value='Affectionate' aria-label='Affectionate'>
+							Affectionate
+						</ToggleButton>
+					</ToggleButtonGroup>
+
+					<div className='flex flex-col pt-4'>
+						<span className='text-xl font-bold'>Doesn't Shed</span>
+						<Checkbox
+							checked={shed}
+							onClick={handleShedChange}
+							inputProps={{ 'aria-label': 'shed', id: 'shed-checkbox' }}
+						/>
+					</div>
+					<div className='flex flex-col pt-4'>
+						<span className='text-xl font-bold'>Is Hypoallergenic</span>
+						<Checkbox
+							checked={hypo}
+							onClick={handleHypoChange}
+							inputProps={{ 'aria-label': 'hypo', id: 'hypo-checkbox' }}
+						/>
+					</div>
+				</div>
+
+				<div>
+					<FormControl>
+						<span className='text-xl font-bold'>Fur Color</span>
+						<RadioGroup
+							row
+							aria-labelledby='color-labels'
+							defaultValue='none'
+							name='radio-buttons-group'
+							value={color}
+							onChange={handleColorChange}
+						>
+							<FormControlLabel
+								value='none'
+								control={<Radio color='default' />}
+								label='None'
+							/>
+							<FormControlLabel
+								value='white'
+								control={
+									<Radio
+										sx={{
+											color: grey[100],
+											'&.Mui-checked': {
+												color: grey[200],
+											},
+										}}
+									/>
+								}
+								label='White'
+							/>
+							<FormControlLabel
+								value='black'
+								control={
+									<Radio
+										sx={{
+											color: grey[900],
+											'&.Mui-checked': {
+												color: grey[900],
+											},
+										}}
+									/>
+								}
+								label='Black'
+							/>
+							<FormControlLabel
+								value='brown'
+								control={
+									<Radio
+										sx={{
+											color: brown[800],
+											'&.Mui-checked': {
+												color: brown[600],
+											},
+										}}
+									/>
+								}
+								label='Brown'
+							/>
+							<FormControlLabel
+								value='red'
+								control={
+									<Radio
+										sx={{
+											color: red[800],
+											'&.Mui-checked': {
+												color: red[600],
+											},
+										}}
+									/>
+								}
+								label='Red'
+							/>
+							<FormControlLabel
+								value='yellow'
+								control={
+									<Radio
+										sx={{
+											color: yellow[700],
+											'&.Mui-checked': {
+												color: yellow[600],
+											},
+										}}
+									/>
+								}
+								label='Yellow'
+							/>
+						</RadioGroup>
+					</FormControl>
+				</div>
+				<div>
+					{!loading && (
+						<button
+							className='w-full px-4 py-2 mt-8 font-medium text-white bg-black rounded-xl sm:mt-10 hover:bg-black/80'
+							onClick={(e) => generateBio(e)}
+						>
+							Get Suggestions &rarr;
+						</button>
+					)}
+					{loading && (
+						<button
+							className='w-full px-4 py-2 mt-8 font-medium text-white bg-black rounded-xl sm:mt-10 hover:bg-black/80'
+							disabled
+						>
+							<LoadingDots color='white' style='large' />
+						</button>
+					)}
+				</div>
+				<hr className='h-px bg-gray-700 border-1 dark:bg-gray-700' />
+				<div className='my-10 space-y-10'>
+					{generatedResults && (
+						<>
+							<div>
+								<h2
+									className='mx-auto text-3xl font-bold sm:text-4xl text-slate-900'
+									ref={bioRef}
+								>
+									Your Breed Suggestions
+								</h2>
+							</div>
+							<div className='flex flex-col items-center justify-center max-w-xl mx-auto space-y-8'>
+								{generatedResults.split('\n').map((generatedBio) => {
+									let breed = generatedBio.split(':')[0].split('.')[1]
+									let link = ''
+									if (breed) {
+										link = breed.replace(/^\s+/, '').replace(/\s+/g, '-')
+									}
+
+									let description = generatedBio.split(':')[1]
+									if (generatedBio) {
+										return (
+											<div
+												className='p-4 transition bg-white border shadow-md rounded-xl hover:bg-gray-100'
+												key={generatedBio}
+											>
+												<p className='text-md'>
+													<span className='text-lg font-bold'>{breed}:</span>
+													{description}
+												</p>
+												{link && (
+													<Link
+														target='_blank'
+														href={`https://www.akc.org/dog-breeds/${link}/`}
+														className='text-blue-500 underline'
+													>
+														Learn More
+													</Link>
+												)}
+											</div>
+										)
+									}
+								})}
+							</div>
+						</>
+					)}
+				</div>
+			</main>
+			<Footer />
+		</div>
+	)
+}
+
+export default Home
